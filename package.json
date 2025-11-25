@@ -1,0 +1,10 @@
+{
+  "name": "amele-core-typescript",
+  "version": "0.1.0",
+  "description": "Amele core communication library for JavaScript/TypeScript functions",
+  "type": "module",
+  "main": "index.ts",
+  "dependencies": {
+    "@msgpack/msgpack": "^3.1.2"
+  }
+}
