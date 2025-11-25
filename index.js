@@ -1,13 +1,13 @@
-import * as fs from 'node:fs';
-import * as net from 'node:net';
-import { encode, decode, Decoder } from '@msgpack/msgpack';
+const fs = require('node:fs');
+const net = require('node:net');
+const { encode, decode, Decoder } = require('@msgpack/msgpack');
 
-let client: net.Socket | null = null;
-let pendingCalls = new Map<string, { resolve: (value: any) => void, reject: (reason?: any) => void }>();
-let decoder: Decoder | null = null;
-let storedContext: any = null;
+let client = null;
+let pendingCalls = new Map();
+let decoder = null;
+let storedContext = null;
 
-export async function callFunction(functionName: string, inputs: any): Promise<any> {
+async function callFunction(functionName, inputs) {
     if (process.env.COMMUNICATION_PROTOCOL === 'tcp') {
         return new Promise((resolve, reject) => {
             if (!client) {
@@ -27,12 +27,12 @@ export async function callFunction(functionName: string, inputs: any): Promise<a
     throw new Error("callFunction is not supported in shmem mode");
 }
 
-export async function context(): Promise<any> {
+async function context() {
     return storedContext;
 }
 
-export async function accept(): Promise<any> {
-    let envelope: any = {};
+async function accept() {
+    let envelope = {};
     if (process.env.COMMUNICATION_PROTOCOL === 'tcp') {
         envelope = await new Promise((resolve, reject) => {
             const port = parseInt(process.env.AMELE_TCP_PORT || '0');
@@ -45,13 +45,13 @@ export async function accept(): Promise<any> {
             let inputsReceived = false;
             let buffer = Buffer.alloc(0);
 
-            client.on('data', (chunk: Buffer) => {
+            client.on('data', (chunk) => {
                 buffer = Buffer.concat([buffer, chunk]);
                 
                 try {
                     // Try to decode all complete messages from the buffer
                     while (buffer.length > 0) {
-                        const msg = decode(buffer) as any;
+                        const msg = decode(buffer);
                         // If we successfully decoded, we need to figure out how many bytes were consumed
                         // Re-encode to get the byte length (msgpack is self-describing)
                         const consumed = encode(msg).length;
@@ -82,7 +82,7 @@ export async function accept(): Promise<any> {
         if (inboxFile) {
             const inputData = fs.readFileSync(inboxFile);
             if (inputData.length > 0) {
-                envelope = decode(inputData) as any;
+                envelope = decode(inputData);
             }
         }
     }
@@ -94,7 +94,7 @@ export async function accept(): Promise<any> {
     return inputs;
 }
 
-export async function respond(context: any): Promise<void> {
+async function respond(context) {
     if (process.env.COMMUNICATION_PROTOCOL === 'tcp') {
         return new Promise((resolve, reject) => {
             if (!client) {
@@ -118,3 +118,5 @@ export async function respond(context: any): Promise<void> {
     }
     fs.writeFileSync(shmemFile, Buffer.from(encode(context)));
 }
+
+module.exports = { callFunction, context, accept, respond };
