@@ -1,13 +1,13 @@
-const fs = require('node:fs');
-const net = require('node:net');
-const { encode, decode, Decoder } = require('@msgpack/msgpack');
+import * as fs from 'node:fs';
+import * as net from 'node:net';
+const { encode, decode, Decoder } = await (typeof Deno !== 'undefined' ? import('npm:@msgpack/msgpack') : import('@msgpack/msgpack'));
 
 let client = null;
 let pendingCalls = new Map();
 let decoder = null;
 let storedContext = null;
 
-async function callFunction(functionName, inputs) {
+export async function callFunction(functionName, inputs) {
     if (process.env.COMMUNICATION_PROTOCOL === 'tcp') {
         return new Promise((resolve, reject) => {
             if (!client) {
@@ -27,11 +27,11 @@ async function callFunction(functionName, inputs) {
     throw new Error("callFunction is not supported in shmem mode");
 }
 
-async function context() {
+export async function context() {
     return storedContext;
 }
 
-async function accept() {
+export async function accept() {
     let envelope = {};
     if (process.env.COMMUNICATION_PROTOCOL === 'tcp') {
         envelope = await new Promise((resolve, reject) => {
@@ -94,7 +94,7 @@ async function accept() {
     return inputs;
 }
 
-async function respond(context) {
+export async function respond(context) {
     if (process.env.COMMUNICATION_PROTOCOL === 'tcp') {
         return new Promise((resolve, reject) => {
             if (!client) {
@@ -118,5 +118,3 @@ async function respond(context) {
     }
     fs.writeFileSync(shmemFile, Buffer.from(encode(context)));
 }
-
-module.exports = { callFunction, context, accept, respond };
