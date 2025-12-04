@@ -1,7 +1,6 @@
 import * as fs from 'node:fs';
 import * as net from 'node:net';
-const { encode, decode, Decoder } = await (typeof Deno !== 'undefined' ? import('npm:@msgpack/msgpack') : import('@msgpack/msgpack'));
-
+const { encode, decode, Decoder } = await ((typeof Deno !== 'undefined' || typeof Bun !== 'undefined') ? import('npm:@msgpack/msgpack') : import('@msgpack/msgpack'));
 let client = null;
 let pendingCalls = new Map();
 let decoder = null;
